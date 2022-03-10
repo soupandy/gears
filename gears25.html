@@ -1,0 +1,690 @@
+<html>
+<body>
+<!--<canvas id="mcanv" style="border:1px solid #000000;" width=1024 height=512>Canvas Here</canvas>-->
+<canvas id="mcanv" style="border:1px dashed blue;" width=1024 height=512>Canvas Here</canvas>
+<br>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+<button onclick="decrement('n1')">-</button>
+N1:<input id="n1" type=range min=6 max=64 onchange="updateFunc()" value=8>
+<button onclick="increment('n1')">+</button>
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+<button onclick="decrement('n2')">-</button>
+N2:<input id="n2" type=range min=8 max=64 onchange="updateFunc()" value=24>
+<button onclick="increment('n2')">+</button>
+</div>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+<button onclick="decrement('dist')">-</button>
+distance:<input id="dist" type=range min=1 max=100 onchange="updateFunc()" value=30>
+<button onclick="increment('dist')">+</button>
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+<button onclick="decrement('backlash')">-</button>
+backlash%:<input id="backlash" type=range min=0 max=100 onchange="updateFunc()" value=10>
+<button onclick="increment('backlash')">+</button>
+</div>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+<button onclick="decrement('axisr')">-</button>
+axisr:<input id="axisr" type=range min=.1 max=10 step=0.1 onchange="updateFunc()" value=2>
+<button onclick="increment('axisr')">+</button>
+</div>
+<div style="border:1px dashed blue;border-radius: 12px; display: inline-block">
+Rolling:<input id="rolling" type=checkbox onchange="autoUpdateFunc()" value=true >
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+<button onclick="decrement('scale')">-</button>
+scale:<input id="scale" type=range min=1 max=128 onchange="updateFunc()" value=3>
+<button onclick="increment('scale')">+</button>
+</div>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+<button onclick="decrement('grot')">-</button>
+grot:<input id="grot" type=range min=0 max=6.28 step=0.00628 onchange="updateFunc()" value=0>
+<button onclick="increment('grot')">+</button>
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+<button onclick="decrement('gd')">-</button>
+gear 2 sync:<input id="gd" type=range min=0 max=6.28 step=0.00628 onchange="updateFunc()" value=0>
+<button onclick="increment('gd')">+</button>
+</div>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+axisr shape:
+<select name="shape" id="shape" onchange="updateFunc()">
+  <option value="1">Square</option>
+  <option value="2">Circle</option>
+  <option value="3">OctaShape</option>
+  <option value="4" selected>Hexagon</option>
+</select>
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+<button onclick="decrement('depth')">-</button>
+depth:<input id="depth" type=range min=1 max=10 onchange="updateFunc()" value=1>
+<button onclick="increment('depth')">+</button>
+</div>
+<div style="border:1px dashed blue;display: inline-block;background-color:yellow">
+<button onclick="decrement('pressureangle')">-</button>
+Pressure Angle:<input id="pressureangle" type=range min=5 max=45 step=0.5 onchange="updateFunc()" value=20>
+<button onclick="increment('pressureangle')">+</button>
+</div>
+<div style="border:1px dashed blue;border-radius: 5px; display: inline-block">
+resolution:
+<select name="resolution" id="resolution" onchange="updateFunc()">
+  <option value="16">very low</option>
+  <option value="32" selected>low</option>
+  <option value="64">medium low</option>
+  <option value="128">medium</option>
+  <option value="256">medium high</option>
+  <option value="512">high</option>
+  <option value="1024">very high</option>
+</select>
+</div>
+
+<br>
+<a href="" id="filedowngear1" style="border: 1px black dashed; border-radius: 5px; padding: 1px;background-color:yellow">download left gear</a>
+<a href="" id="filedowngear2" style="border: 1px black dashed; border-radius: 5px; padding: 1px">download right gear</a>
+<script>
+
+function increment(element) {
+      document.getElementById(element).stepUp();
+      updateFunc();
+}
+function decrement(element) {
+      document.getElementById(element).stepDown();
+      updateFunc();
+}
+
+
+function updateFunc() {
+recalcvals();
+//drawgear1();
+setupfile('gear-left.obj','gear-right.obj','text/plain');
+document.getElementById('rolling').checked = false;
+}
+
+function autoUpdateFunc() {
+recalcvals();
+//drawgear1();
+//setupfile('gear-left.obj','gear-right.obj','text/plain');
+}
+
+
+function rotate (x,y,a) {
+var xv=x.value;
+var yv=y.value;
+var cs=Math.cos(a);
+var sn=Math.sin(a);
+var nx=xv*cs-yv*sn;
+var ny=yv*cs+xv*sn;
+x.value=nx;
+y.value=ny;
+}
+
+function text(x,y,text) {
+canv.font="12px Courier";
+canv.fillText(text,x*12,(y+1)*12);
+}
+
+function plot(x,y) {
+multx=right.x-left.x;
+multy=right.y-left.y;
+posx=(x-left.x)*canvid.width/multx;
+posy=(y-left.y)*canvid.height/multy;
+canv.moveTo(posx,posy);
+savedx=x;
+savedy=y;
+}
+function draw(x,y) {
+multx=right.x-left.x;
+multy=right.y-left.y;
+posx=(x-left.x)*canvid.width/multx;
+posy=(y-left.y)*canvid.height/multy;
+//canv.lineTo((x-left.x)*canvid.width/multx,(y-left.y)*canvid.height/multy);
+canv.lineTo(posx,posy);
+savedx=x;
+savedy=y;
+}
+
+function depthLine() {
+multx=right.x-left.x;
+multy=right.y-left.y;
+var projectedx=savedx*56/(56+(depth-1));
+var projectedy=savedy*56/(56+(depth-1));
+posx=(projectedx-left.x)*canvid.width/multx;
+posy=(projectedy-left.y)*canvid.height/multy;
+var prevstyle=canv.strokeStyle;
+canv.stroke();
+canv.strokeStyle="rgba(128,128,128,0.8)";
+canv.beginPath();
+canv.moveTo(posx,posy);
+posx=(savedx-left.x)*canvid.width/multx;
+posy=(savedy-left.y)*canvid.height/multy;
+canv.lineTo(posx,posy);
+canv.stroke();
+canv.strokeStyle=prevstyle;
+canv.beginPath();
+canv.moveTo(posx,posy);
+}
+
+function circle(x,y,r) {
+multx=right.x-left.x;
+multy=right.y-left.y;
+posx=(x-left.x)*canvid.width/multx;
+posy=(y-left.y)*canvid.height/multy;
+canv.moveTo(posx+r*canvid.height/multy,posy);
+canv.arc(posx,posy,r*canvid.height/multy,0, 2 * Math.PI);
+}
+
+
+function tracecircle(x, y, r, a1, a2, direction,mode) {
+    var a;
+    circletext='';
+    var astep = Math.PI / (resolution/4);
+    starta = a1;
+    enda = a2;
+    while (enda<starta) {enda+=Math.PI*2.0;}
+    if (direction==1) astep=-astep;
+    if (direction==0) {
+      for (a=starta;a<enda-astep/2;a+=astep) {
+      
+      if (mode==0) {
+        if (a==starta) plot(x + r * Math.cos(a), y + r * Math.sin(a));
+	draw (x + r * Math.cos(a), y + r * Math.sin(a));
+      }
+      else
+      circletext+=addpoint(x + r * Math.cos(a), y + r * Math.sin(a));
+      }
+    } else {
+      for (a=enda;a>starta-astep/2;a+=astep) {
+      if (mode==0) {
+        if (a==enda) plot(x + r * Math.cos(a), y + r * Math.sin(a));
+	draw (x + r * Math.cos(a), y + r * Math.sin(a));
+      }
+      else
+      circletext+=addpoint(x + r * Math.cos(a), y + r * Math.sin(a));
+      }
+    }
+}
+
+function recalcvals() {
+
+canv.clearRect(0,0,canvid.width,canvid.height);
+canv.beginPath();
+
+x=new Object();
+y=new Object();
+x.value=10;
+y.value=0;
+
+scale=1.0*document.getElementById('scale').value;
+depth=1.0*document.getElementById('depth').value;
+n1=1.0*document.getElementById('n1').value;
+n2=1.0*document.getElementById('n2').value;
+ratio=n2/n1;
+distance=1.0*document.getElementById('dist').value;
+backlash=1.0*document.getElementById('backlash').value;
+axisr=1.0*document.getElementById('axisr').value;
+
+resolution=1.0*document.getElementById('resolution').value;
+
+left.x=-canvid.width/10/scale;
+left.y=-canvid.height/10/scale;
+right.x=canvid.width/10/scale;
+right.y=canvid.height/10/scale;
+
+r1 = distance * n1 / (n1 + n2);
+r2 = distance * n2 / (n1 + n2);
+m = 2 * r1 / n1;
+
+text(0,0,'n1:'+n1);
+if (Number.isInteger(n2))
+text(0,1,'n2:'+n2+'(ok)');else {
+prevstyle=canv.fillStyle;
+canv.fillStyle="rgba(255,0,0,0.8)";
+text(0,1,'n2:'+n2.toFixed(4)+'(non-integer please change ratio or n1):'+Math.round(n1 * ratio));
+canv.fillStyle=prevstyle;
+n2 = Math.round(n1 * ratio);
+}
+
+text(0,2,'r1:'+r1.toFixed(4));
+text(0,3,'r2:'+r2.toFixed(4));
+text(0,4,'distance:'+distance.toFixed(2));
+text(0,5,'ratio:'+ratio.toFixed(4));
+text(0,6,'backlash:'+backlash+"%");
+text(0,7,'scale:'+scale);
+text(0,8,'axisr:'+axisr.toFixed(2));
+grot=1.0*document.getElementById('grot').value;
+text(0,9,'grot:'+grot.toFixed(5));
+if (document.getElementById('rolling').checked) 
+text(0,10,'rolling: yes'); else text(0,10,'rolling: no'); 
+gd=1.0*document.getElementById('gd').value;
+text(0,11,'gear 2 sync::'+gd.toFixed(5));
+text(0,12,'shape:'+document.getElementById('shape').value);
+var shape=document.getElementById('shape').value;
+//text(0,13,'depth:'+document.getElementById('depth').value);
+text(0,13,'depth:'+depth);
+var pressureangle=document.getElementById('pressureangle').value;
+text(0,14,'Pressure angle:'+pressureangle);
+
+text(0,15,'Resolution:'+resolution);
+n = n1;
+presangle = pressureangle * Math.PI / 180.0;
+r = r1;
+
+angleatr = Math.sqrt((1.0 / Math.cos(presangle))*(1.0 / Math.cos(presangle)) - 1.0);
+rb = r * Math.cos(presangle);
+rb2=r2 * Math.cos(presangle);
+
+a = angleatr;
+px = rb * (Math.cos(a) + a * Math.sin(a));
+py = rb * (Math.sin(a) - a * Math.cos(a));
+
+circle (px - r, py, 0.1);
+
+rotatedang = 2*Math.atan2(py, px);
+
+px2 = rb2 * (Math.cos(a) + a * Math.sin(a));
+py2 = rb2 * (Math.sin(a) - a * Math.cos(a));
+
+rotatedang2 = 2*Math.atan2(py2, px2);
+
+circle (-px2 + r2, -py2, 0.1);
+
+plot (-r, 0);
+draw(-r+r * Math.cos(rotatedang), r * Math.sin(rotatedang));
+ 
+grot = 0.0;
+grot=1.0*document.getElementById('grot').value;
+gd = 180.0 / n;
+gd=1.0*document.getElementById('gd').value;
+
+toothanglemax = Math.PI / n + rotatedang;
+toothanglemin = 2.0 * (2.0 * rotatedang);
+toothangle = toothanglemax-(toothanglemax*backlash)/200.0;
+toothanglemax2 = Math.PI / n2 + rotatedang2;
+toothanglemin2 = 2.0 * (2.0 * rotatedang2);
+toothangle2 = toothanglemax2-(toothanglemax2*backlash)/200.0;
+gd+=ratio*Math.PI;
+gd-=rotatedang2*ratio/2;
+gd-=rotatedang/2;
+
+
+
+r=r1;
+n=n1;
+rb = r * Math.cos(presangle);
+rb2 = r2 * Math.cos(presangle);
+
+circle (-r, 0, r);
+circle (-r, 0, rb);
+plot (-r, 0);
+draw(r2, 0);
+plot(0, 0);
+draw (-r * Math.sin(presangle), r * Math.cos(presangle));
+circle (r2, 0, r2);
+circle (r2, 0, rb2);
+
+
+plot (-r+axisr / Math.sqrt(2),0);
+for (a=0;a<Math.PI*2;a+=Math.PI/64) {
+x.value=axisr*2.0*Math.cos(a);
+y.value=axisr*2.0*Math.sin(a);
+maptoshape(x,y);
+draw(-r+x.value,y.value);
+}
+
+plot (r2+axisr / Math.sqrt(2),0);
+for (a=0;a<Math.PI*2;a+=Math.PI/64) {
+x.value=axisr*2.0*Math.cos(a);
+y.value=axisr*2.0*Math.sin(a);
+maptoshape(x,y);
+draw(r2+x.value,y.value);
+}
+
+var sides=4;
+if (shape==1) sides=4;
+if (shape==2) sides=24;
+if (shape==3) sides=8;
+if (shape==4) sides=6;
+
+
+for (a=0;a<Math.PI*2;a+=Math.PI*2/sides) {
+plot(-r+axisr*Math.cos(a)/Math.sqrt(2),axisr*Math.sin(a)/Math.sqrt(2));
+//draw(-r+axisr*Math.cos(a+Math.PI*2/sides)/Math.sqrt(2),axisr*Math.sin(a+Math.PI*2/sides)/Math.sqrt(2));
+depthLine();
+plot(r2+axisr*Math.cos(a)/Math.sqrt(2),axisr*Math.sin(a)/Math.sqrt(2));
+depthLine();
+}
+
+
+n = n1;
+r = r1;
+rb = r * Math.cos(presangle);
+rm = r - m;
+gearno = 1;
+vecnum = 0;
+text1='o leftgear\n';
+for (i=0.0;i<n;i++) {
+        a = (i - 1.0) * Math.PI * 2.0 / n + grot + toothangle /2.0 + Math.PI / n;
+        cutr = rb * Math.PI / n;
+        arcrads = Math.PI*2.0 / n;
+        cutr = cutr * (arcrads - toothangle) / arcrads;
+      
+        while (a>2*Math.PI) {a-=2*Math.PI;}
+        a1 = a + Math.PI / 2.0;
+        a2 = a + Math.PI * 3.0 / 2.0;
+        if (a1 > 2 * Math.PI)  a1 = a1 - 2.0 * Math.PI;
+        if (a2 > 2 * Math.PI) a2 = a2 - 2.0 * Math.PI;
+        tracecircle (-r+rm * Math.cos(a), rm * Math.sin(a), cutr,a1,a2,1,0);
+        tracecircle (rm * Math.cos(a), rm * Math.sin(a), cutr,a1,a2,1,1);
+        text1+=circletext;
+        depthLine();
+        a = 0.0;
+        complete = 0;
+        while ( complete == 0 )
+        {
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = -rb * (Math.sin(a) - a * Math.cos(a));
+            x.value=px;
+	    y.value=py;
+            rotate (x, y, toothangle);
+            comparepy=y.value;
+            
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = rb * (Math.sin(a) - a * Math.cos(a));
+            
+            if (py>=comparepy) complete=1;
+	    x.value=px;
+	    y.value=py;
+            rotate (x, y, grot);
+            rotate (x, y, 2.0*Math.PI * i / n);
+            px=x.value;
+            py=y.value;
+            if (complete==0) {
+	      draw(px-r,py);
+	      text1+=addpoint(px,py);
+	      } else a = a - Math.PI / resolution;
+            d = Math.sqrt(px * px + py * py);
+            if (d >= r + (m)) {complete = 1;}
+            a = a + Math.PI / resolution;
+        }
+        depthLine();
+	a = a - Math.PI / resolution;
+        while (a > 0) {
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = -rb * (Math.sin(a) - a * Math.cos(a));
+	    x.value=px;
+	    y.value=py;
+            rotate (x, y, grot);
+            rotate (x, y, toothangle);
+            rotate (x, y, 2.0*Math.PI * i / n);
+            px=x.value;
+            py=y.value;
+            draw (px - r, py);
+            text1+=addpoint(px,py);
+            a = a - Math.PI / resolution;
+        }
+        depthLine();
+}
+text1+=endfile();
+n = n2;
+r = r2;
+rb = r * Math.cos(presangle);
+rm = r - m;
+gearno=2;
+vecnum = 0;
+text2='o rightgear\n';
+for (i=0.0;i<n;i++) {
+        a = (i - 1.0) * Math.PI * 2.0 / n -( grot-gd)/ratio + toothangle2/2 + Math.PI / n;
+        cutr = rb * Math.PI / n;
+        arcrads = Math.PI*2.0 / n;
+        cutr = cutr * (arcrads - toothangle2) / arcrads;
+        while (a>2*Math.PI) {a-=2*Math.PI;}
+        a1 = a + Math.PI / 2.0;
+        a2 = a + Math.PI * 3.0 / 2.0;
+        if (a1 > 2 * Math.PI)  a1 = a1 - 2.0 * Math.PI;
+        if (a2 > 2 * Math.PI) a2 = a2 - 2.0 * Math.PI;
+        tracecircle (r+rm * Math.cos(a), rm * Math.sin(a), cutr,a1,a2,1,0);
+        tracecircle (rm * Math.cos(a), rm * Math.sin(a), cutr,a1,a2,1,1);
+        text2+=circletext;
+        depthLine();
+        //circle (-r+rm * Math.cos(a), rm * Math.sin(a), cutr);
+        a = 0.0;
+        complete = 0;
+        while ( complete == 0 )
+        {
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = -rb * (Math.sin(a) - a * Math.cos(a));
+            x.value=px;
+	    y.value=py;
+            rotate (x, y, toothangle2);
+            comparepy=y.value;
+            
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = rb * (Math.sin(a) - a * Math.cos(a));
+            
+            if (py>=comparepy) complete=1;
+	    x.value=px;
+	    y.value=py;
+            rotate (x, y, (-grot+gd)/ratio);
+            rotate (x, y, 2.0*Math.PI * i / n);
+            px=x.value;
+            py=y.value;
+            //if (a==0.0 && i==0.0) plot(px+r, py); else 
+            if (complete==0) {
+	      draw(px+r,py);
+	      text2+=addpoint(px,py);
+	      } else a = a - Math.PI / resolution;
+            d = Math.sqrt(px * px + py * py);
+            if (d >= r + (m)) {complete = 1;}
+            a = a + Math.PI / resolution;
+        }
+        depthLine();
+	a = a - Math.PI / resolution;
+        while (a > 0) {
+            px = rb * (Math.cos(a) + a * Math.sin(a));
+            py = -rb * (Math.sin(a) - a * Math.cos(a));
+	    x.value=px;
+	    y.value=py;
+            rotate (x, y, (-grot+gd)/ratio);
+            rotate (x, y, toothangle2);
+            rotate (x, y, 2.0*Math.PI * i / n);
+            px=x.value;
+            py=y.value;
+            draw (px + r, py);
+            text2+=addpoint(px,py);
+            a = a - Math.PI / resolution;
+        }
+        depthLine();
+        }
+text2+=endfile();
+
+
+canv.stroke();
+
+
+if (document.getElementById('grot').value<6 && document.getElementById('rolling').checked) {
+ document.getElementById('grot').stepUp();
+ setTimeout(function(){autoUpdateFunc()},100);
+ }
+}
+
+
+function maptoshape(x,y) {
+if (document.getElementById('shape').value==2) maptocircle(x,y);
+if (document.getElementById('shape').value==1) maptosquare(x,y);
+if (document.getElementById('shape').value==3) maptoocta(x,y);
+if (document.getElementById('shape').value==4) maptopoly(x,y,6);
+}
+
+function maptopoly(x,y,n) {
+
+var a;
+v1 = x.value;
+v2 = y.value;
+var la=Math.atan2(v2,v1);
+var d;
+for (a=-Math.PI;a<Math.PI;a+=2*Math.PI/n) if (la>=a && la<=a+2*Math.PI/n) {
+
+ var cx1=axisr*Math.cos(a)/Math.sqrt(2);
+ var cy1=axisr*Math.sin(a)/Math.sqrt(2);
+ var cx2=axisr*Math.cos(a+2*Math.PI/n)/Math.sqrt(2);
+ var cy2=axisr*Math.sin(a+2*Math.PI/n)/Math.sqrt(2);
+  // Line around is a1*x+b1*y=c1
+  var a1 = cy2 - cy1;
+  var b1 = cx1 - cx2;
+  var c1 = a1*cx1+b1*cy1;
+  // Line from center is a2*x+b2*y=c2
+  var a2 = y.value;
+  var b2 = -x.value;
+  var c2 =  0;
+  var det = a1*b2-a2*b1;
+  if (det!= 0)
+  {
+      x.value = (b2*c1-b1*c2)/det;
+      y.value = (a1*c2-a2*c1)/det;
+      d=Math.sqrt(x.value*x.value+y.value*y.value);
+      if (d<=axisr/Math.sqrt(2)) return;
+  }
+ }
+}
+
+function maptocircle (x, y) {
+var v1,v2,d;
+    v1 = x.value;
+    v2 = y.value;
+    d=Math.sqrt(v1*v1+v2*v2)
+    x.value = x.value / d;
+    y.value = y.value / d;
+    x.value = x.value * axisr / Math.sqrt(2);
+    y.value = y.value * axisr / Math.sqrt(2);
+}
+
+function maptoocta(x,y) {
+var v1,v2,max,d;
+
+    v1 = Math.abs(x.value);
+    v2 = Math.abs(y.value);
+    max = v1;
+    if (v2 > max) max = v2;
+    x.value = x.value / max;
+    y.value = y.value / max;
+    d=Math.sqrt(x.value*x.value+y.value*y.value);
+    if (d>1.1) {
+    x.value/=d;
+    y.value/=d;
+    }
+    x.value = x.value * axisr / Math.sqrt(2);
+    y.value = y.value * axisr / Math.sqrt(2);
+
+}
+
+function maptosquare (x, y) {
+var v1,v2,max;
+    v1 = Math.abs(x.value);
+    v2 = Math.abs(y.value);
+    max = v1;
+    if (v2 > max) max = v2;
+    x.value = x.value / max;
+    y.value = y.value / max;
+    x.value = x.value * axisr / Math.sqrt(2);
+    y.value = y.value * axisr / Math.sqrt(2);
+}
+
+function addpoint(x,y) {
+var val;
+val='';
+var sqx=new Object();
+var sqy=new Object();
+        val+='v '+x.toFixed(5)+' '+y.toFixed(5)+' '+depth/2+'\n';
+        val+='v '+x.toFixed(5)+' '+y.toFixed(5)+' -'+depth/2+'\n';
+        sqx.value = x;
+        sqy.value = y;
+        maptoshape (sqx, sqy);
+        val+='v '+sqx.value.toFixed(5)+' '+sqy.value.toFixed(5)+' '+depth/2+'\n';
+        val+='v '+sqx.value.toFixed(5)+' '+sqy.value.toFixed(5)+' -'+depth/2+'\n';
+        if (vecnum > 0) {
+        val+='f '+(vecnum-3)+' '+(vecnum-2)+' '+(vecnum+2)+' '+(vecnum+1)+'\n';
+        val+='f '+vecnum+' '+(vecnum-1)+' '+(vecnum+3)+' '+(vecnum+4)+'\n';
+        }
+        vecnum+=4;
+return val;
+}
+
+function rv(v1,v2) {
+var val;
+val=1+(v1+v2-1)%v2;
+return val;
+}
+
+function endfile() {
+    var val;
+    val=''
+    val+='f '+(vecnum - 3)+' '+(vecnum - 2)+' '+2+' '+1+'\n';
+    val+='f '+vecnum+' '+(vecnum - 1)+' '+ 3+' '+ 4  +'\n';
+    for (i=1;i<vecnum;i+=4) {
+    val+='f '+rv(i,vecnum)+' '+rv(i+4,vecnum)+' '+rv(i+6,vecnum)+' '+rv(i+2,vecnum)+'\n';
+    }
+    for( i = vecnum;i>3;i-=4) {
+        val+='f '+rv(i,vecnum)+' '+rv(i+4,vecnum)+' '+rv(i+6,vecnum)+' '+rv(i+2,vecnum)+'\n';
+        }
+    return val;
+}
+
+
+function drawgear1() {
+  //let text1='v 0 0 0\n';
+  text1+='v 0 0 0\n';
+  text1+='v 1 0 0\n';
+  text1+='v 0 1 0\n';
+  text1+='v 0 0 1\n';
+  text1+='f 1 2 3\n';
+  text1+='f 1 2 4\n';
+  text1+='f 2 3 4\n';
+  text1+='f 3 1 4\n';
+  text1+=addpoint(10,20);
+}
+
+function setupfile(name1,name2, type) {
+  var something1 = document.getElementById("filedowngear1");
+  var file1 = new Blob([text1], {type: type});
+  something1.href = URL.createObjectURL(file1);
+  something1.download = name1;
+  var something2 = document.getElementById("filedowngear2");
+  var file2 = new Blob([text2], {type: type});
+  something2.href = URL.createObjectURL(file2);
+  something2.download = name2;
+}
+
+function resizefunc()
+{
+canv.canvas.width=(window.innerWidth-20);
+canv.canvas.height=(window.innerHeight-180);
+updateFunc();
+}
+
+
+//setupfile('gear.obj', 'text/plain');
+var canvid=document.getElementById("mcanv");
+var canv=canvid.getContext("2d");
+var inputs=document.vars;
+left=new Object();
+right=new Object();
+var scale=3;
+var depth=1;
+var text1;
+var text2;
+var circletext;
+var vecnum;
+var axisr;
+var grot;
+var gd;
+var savedx,savedy;
+var resolution=256;
+axisr=5;
+grot=0;
+gd=0;
+resizefunc();
+window.addEventListener("resize",resizefunc);
+
+</script>
+</body>
+</html>
